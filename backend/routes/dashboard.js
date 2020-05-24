@@ -1,14 +1,24 @@
 const express = require('express');
 const router = express.Router();
 
-// Get back all the champs
+// Get back all the persons
 router.get('/', async (req, res) => {
-    try {
-        // var champs = await Champ.find();
-        res.json({username: 'test', password: 'test'})
-    } catch (err) {
-        res.json({ message: err });
-    }
+    var message = 'OK', 
+        error = false,
+        sql = "SELECT * FROM `persona`";
+    await db.query(sql, function (err, result) {
+        if (err) {
+            message = err;
+            error = true;
+        }
+        else if (result.length <= 0)
+            message = "Persons not found!";
+        res.json({
+            data: result || [],
+            error: error,
+            message: message
+        });
+    });
 });
 
 // Submits a person
@@ -29,27 +39,49 @@ router.post('/', (req, res) => {
 });
 
 // Specific person
-router.get('/:personId', async (req, res) => {
-    /*try {
-        var person = await Champ.findById(req.params.champId);
-        res.json(person);
-    } catch (err) {
-        res.json({ message: err });
-    }*/
+router.get('/:id', async (req, res) => {
+    var message = 'OK';
+    var error = false;
+    var id = req.params.id;
+    var sql = `SELECT * FROM persona WHERE idPersona = ${id}`;
+    await db.query(sql, function (err, result) {
+        if (err) {
+            message = err;
+            error = true;
+        }
+        else if (result.length <= 0)
+            message = `Person with id ${id} not found`;
+        res.json({
+            data: result || [],
+            error: error,
+            message: message
+        });
+    });
 });
 
 // Delete person
-router.delete('/:personId', async (req, res) => {
-   /*try {
-        var removedChamp = await Champ.remove({ _id: req.params.champId });
-        res.json(removedChamp);
-    } catch (err) {
-        res.json({ message: err });
-    }*/
+router.delete('/:id', async (req, res) => {
+   var message = 'OK';
+   var error = false;
+   var id = req.params.id;
+   var sql = `DELETE FROM persona WHERE idPersona = ${id}`;
+   await db.query(sql, function (err, result) {
+       if (err) {
+           message = err;
+           error = true;
+       }
+       else if (result.length <= 0)
+           message = `Person with id ${id} not found`;
+       res.json({
+           data: result || [],
+           error: error,
+           message: message
+       });
+   });
 });
 
 // Update person
-router.patch('/:champId', async (req, res) => {
+router.patch('/:id', async (req, res) => {
     /*try {
         var updatedChamp = await Champ.updateOne(
             { _id: req.params.champId },

@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 
 function App() {
+	localStorage.setItem('API_URL', 'http://localhost:4000');
 	return (
 		<Router>
 			<div className="main">

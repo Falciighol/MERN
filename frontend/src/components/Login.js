@@ -1,38 +1,57 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import { Redirect } from "react-router-dom";
 
 export default class Login extends Component {
 
+    constructor() {
+        super();
+        this.validateLogin = this.validateLogin.bind(this);
+    }
+
     state = {
         username: '',
-        password: ''
+        password: '',
+        logged: false
     }
 
     async componentDidMount() {
-        // this.validateLogin();
+        
     }
 
-    validateLogin = async () => {
-        await axios.post('http://localhost:4000/api/user/findUser', {
+    APIURL = localStorage.getItem('API_URL');
+
+    login = async () => {
+        await axios.post(this.APIURL + '/login', {
             username: this.state.username,
-            pasword: this.state.password
+            password: this.state.password || 0
         })
-        .then(function (response) {
-            console.log(response);
+        .then(function (res) {
+            if (res.data.error === false && res.data.username) {
+                window.sessionStorage.setItem("loggedIn", "true");
+                this.props.validateLogin();
+                window.location.reload(false)
+            }
         })
         .catch(function (error) {
             console.log(error);
         });
     }
 
+    validateLogin = function() {
+        return (window.sessionStorage.getItem("loggedIn") === "true")
+    }
+
     onInputChange = (e) => {
         this.setState({
             [e.target.name]: e.target.value
         });
-        console.log(this.state)
     }
 
     render() {
+        if (this.validateLogin() === true) {
+            return <Redirect to={"/dashboard"} />
+        }
         return (
             <div>
                 <div className="login-form">
@@ -68,7 +87,7 @@ export default class Login extends Component {
                                             </div>
 
                                             <div className="col-md-6 offset-md-3">
-                                                <button type="button" onClick={() => this.validateLogin()} className="btn btn-primary">
+                                                <button type="button" onClick={() => this.login()} className="btn btn-primary">
                                                     Iniciar sesión 
                                                 </button>
                                             </div>

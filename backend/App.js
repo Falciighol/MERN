@@ -1,4 +1,5 @@
 const express = require('express');
+var session = require("express-session");
 require('dotenv/config');
 const cors = require('cors');
 const path = require('path');
@@ -10,6 +11,12 @@ var app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+		secret: "istrategies",
+		resave: true,
+		saveUninitialized: true,
+	})
+);
 
 // Connect to DB
 const conn = mysql.createConnection({
@@ -29,7 +36,7 @@ global.db = conn;
 
 // Import routes
 const dashboard = require('./routes/dashboard');
-const login = require('./routes/login')
+const login = require('./routes/login');
 
 // ROUTES
 app.use('/dashboard', dashboard);

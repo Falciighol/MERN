@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import { Redirect } from "react-router-dom";
 
 function formatDate(date) {
     var d = new Date(date),
@@ -34,6 +35,10 @@ export default class Dashboard extends Component {
         this.find = this.find.bind(this);
     }
 
+    validateLogin = function() {
+        return (window.sessionStorage.getItem("loggedIn") === "true")
+    }
+
     async componentDidMount() {
         this.find();
     }
@@ -52,6 +57,11 @@ export default class Dashboard extends Component {
         return true;
     }
 
+    logout = () => {
+        window.sessionStorage.setItem("loggedIn", "false");
+        this.props.history.push(`/login`);
+    }
+
     find = async () => {
         var thisCopy = this;
         await axios.get(this.APIURL + '/dashboard')
@@ -67,7 +77,7 @@ export default class Dashboard extends Component {
                     fechaNac: thisCopy.state.fechaNac,
                     info: thisCopy.state.info,
                     showA: thisCopy.state.showA,
-                    data: res.data
+                    data: res.data.data
                 });
                 /*var newArr = [];
                 res.data.data.forEach(el => {
@@ -105,7 +115,7 @@ export default class Dashboard extends Component {
                         fechaNac: formatDate(p.fechaNacimmiento),
                         info: p.informacionAdicional,
                         showA: thisCopy.state.showA,
-                        data: res.data
+                        data: thisCopy.state.data
                     });
                 } else {
                     alert(`No se encontró ningun registro con ID ${thisCopy.state.id}!`)
@@ -134,6 +144,8 @@ export default class Dashboard extends Component {
             .catch(function (error) {
                 console.log(error);
             });
+        } else {
+            alert("Complete los campos requeridos!")
         }
     }
 
@@ -154,25 +166,30 @@ export default class Dashboard extends Component {
             .catch(function (error) {
                 console.log(error);
             });
+        } else {
+            alert("Complete los campos requeridos!")
         }
     }
 
     delete = async () => {
         var thisCopy = this;
-        await axios.delete(this.APIURL + '/dashboard/'+this.state.id || 0)
-        .then(function (res) {
-            if (res.data.error === false && res.data) {
-                if (!res.data.data.error && res.data.data.affectedRows >= 1)
-                    alert("Registro eliminado correctamente!")
-                else
-                    alert(`Error al editar el registro con ID ${thisCopy.state.id}!`)
-                thisCopy.find();
-                thisCopy.clean();
-            }
-        })
-        .catch(function (error) {
-            console.log(error);
-        });
+        var r = window.confirm(`Desea eliminar el registro con ID ${this.state.id}?`);
+        if (r === true) {
+            await axios.delete(this.APIURL + '/dashboard/'+this.state.id || 0)
+            .then(function (res) {
+                if (res.data.error === false && res.data) {
+                    if (!res.data.data.error && res.data.data.affectedRows >= 1)
+                        alert("Registro eliminado correctamente!")
+                    else
+                        alert(`El registro con ID ${thisCopy.state.id} ya fue eliminado o no existe!`)
+                    thisCopy.find();
+                    thisCopy.clean();
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        }
     }
 
     clean = () => {
@@ -199,6 +216,9 @@ export default class Dashboard extends Component {
     }
 
     render() {
+        if (this.validateLogin() !== true) {
+            return <Redirect to={"/login"} />
+        }
         return (
             <div>
                 <div className="login-form">
@@ -207,13 +227,24 @@ export default class Dashboard extends Component {
                             <div className="col-md-10">
                                 <div className="card">
                                     <div className="card-header">
-                                        <h3><i className="fas fa-user"></i> <b>Personas</b></h3>
+                                        <div className="row">
+                                            <div className="col-md-6 text-align-left">
+                                                <h3>
+                                                    <i className="fas fa-user"></i> <b>Gestión de personas</b>
+                                                </h3>
+                                            </div>
+                                            <div className="col-md-6" align="right">
+                                                <button type="button" onClick={() => this.logout()} className="btn btn-dark">
+                                                    Cerrar sesión
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="card-body">
                                         <form>
                                             <div className="row">
                                                 <div className="form-group col-md-8">
-                                                    <label htmlFor="id" className="col-md-12 col-form-label text-md-left"><b>id <span className="red"></span></b></label>
+                                                    <label htmlFor="id" className="col-md-12 col-form-label text-md-left"><b>ID de registro <span className="red"></span></b></label>
                                                     <div className="col-md-12">
                                                         <input min="0" value={this.state.id} type="number" id="id" 
                                                             className="form-control" 
@@ -276,6 +307,7 @@ export default class Dashboard extends Component {
                                                     <label htmlFor="sexo" className="col-md-12 col-form-label text-md-left"><b>Sexo <span className="red">*</span></b></label>
                                                     <div className="col-md-12">
                                                         <select value={this.state.sexo} className="form-control" id="sexo" onChange={this.onInputChange} name="sexo" required>
+                                                            <option value="">-Seleccione una opción-</option>
                                                             <option value="1">Masculino</option>
                                                             <option value="2">Femenino</option>
                                                         </select>
@@ -336,6 +368,7 @@ export default class Dashboard extends Component {
                                             <table className="table">
                                                 <thead>
                                                     <tr>
+                                                    <th scope="col">ID</th>
                                                     <th scope="col">Nombres</th>
                                                     <th scope="col">Apellidos</th>
                                                     <th scope="col">Sexo</th>
@@ -345,13 +378,16 @@ export default class Dashboard extends Component {
                                                 </thead>
                                                 <tbody>
                                                     {
-                                                    <tr>
-                                                        <td>Mark</td>
-                                                        <td>Otto</td>
-                                                        <td>@mdo</td>
-                                                        <td>Otto</td>
-                                                        <td>@mdo</td>
-                                                    </tr>
+                                                        this.state.data.map(el => (
+                                                            <tr>
+                                                                <td>{"".concat(el.idPersona)}</td>
+                                                                <td>{"".concat(el.primerNombre, " ", el.segundoNombre)}</td>
+                                                                <td>{"".concat(el.primerApellido, " ", el.segundoApellido)}</td>
+                                                                <td>{(el.sexo === 1)?"Masculino":"Femenino"}</td>
+                                                                <td>{formatDate(el.fechaNacimmiento)}</td>
+                                                                <td>{el.informacionAdicional}</td>
+                                                            </tr>
+                                                        ))
                                                     }
                                                 </tbody>
                                             </table>

@@ -11,7 +11,7 @@ export default class Login extends Component {
 
     state = {
         username: '',
-        password: '',
+        password: 0,
         logged: false
     }
 
@@ -19,26 +19,59 @@ export default class Login extends Component {
         
     }
 
+    renderRedirect = () => {
+        if (this.validateLogin()) {
+            return <Redirect to='/dashboard' />
+        }
+    }
+
+    validate = () => {
+        if (!this.state.username || 
+            !this.state.password
+            ) {
+            return false;
+        }
+        return true;
+    }
+
+    validateFormats = () => {
+        if (this.state.username.split("").length < 6) {
+            return false;
+        }
+        return true;
+    }
+
     APIURL = localStorage.getItem('API_URL');
 
     login = async () => {
-        await axios.post(this.APIURL + '/login', {
-            username: this.state.username,
-            password: this.state.password || 0
-        })
-        .then(function (res) {
-            if (res.data.error === false && res.data.username) {
-                window.sessionStorage.setItem("loggedIn", "true");
-                this.props.validateLogin();
-                window.location.reload(false)
+        if (this.validate()) {
+            if (this.validateFormats()) {
+                var thisCopy = this;
+                await axios.post(this.APIURL + '/login', {
+                    username: this.state.username,
+                    password: this.state.password || 0
+                })
+                .then(function (res) {
+                    if (res.data.error === false && res.data.username) {
+                        window.sessionStorage.setItem("loggedIn", "true");
+                        thisCopy.validateLogin();
+                        thisCopy.props.history.push(`/dashboard`);
+                    } else {
+                        alert("El usuario y la contraseña no coinciden!")
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            } else {
+                alert("El usuario debe tener más de 6 caracteres.")
             }
-        })
-        .catch(function (error) {
-            console.log(error);
-        });
+        } else {
+            alert("Complete los campos requeridos!")
+        }
     }
 
-    validateLogin = function() {
+    validateLogin = () => {
         return (window.sessionStorage.getItem("loggedIn") === "true")
     }
 
@@ -49,11 +82,9 @@ export default class Login extends Component {
     }
 
     render() {
-        if (this.validateLogin() === true) {
-            return <Redirect to={"/dashboard"} />
-        }
         return (
             <div>
+            {this.renderRedirect()}
                 <div className="login-form">
                     <div className="cotainer">
                         <div className="row justify-content-center">
@@ -82,7 +113,7 @@ export default class Login extends Component {
                                                         id="password" 
                                                         className="form-control" 
                                                         onChange={this.onInputChange} 
-                                                        name="password" required/>
+                                                        name="password" pattern="^[0-9]*$" required/>
                                                 </div>
                                             </div>
 

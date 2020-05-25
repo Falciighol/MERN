@@ -67,7 +67,7 @@ export default class Login extends Component {
                                             <div className="form-group row">
                                                 <label htmlFor="user" className="col-md-12 col-form-label text-md-left"><b>Usuario <span className="red">*</span></b></label>
                                                 <div className="col-md-12">
-                                                    <input type="text" id="user" 
+                                                    <input minLength="6" maxLength="12" type="text" id="user" 
                                                         className="form-control" 
                                                         onChange={this.onInputChange} 
                                                         name="username"

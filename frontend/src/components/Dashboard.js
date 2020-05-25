@@ -1,6 +1,203 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
+import axios from 'axios';
+
+function formatDate(date) {
+    var d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear();
+
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+
+    return [year, month, day].join('-');
+}
 
 export default class Dashboard extends Component {
+
+    constructor() {
+        super();
+        this.state = {
+            id: 0,
+            pNombre: '',
+            sNombre: '',
+            pApellido: '',
+            sApellido: '',
+            sexo: 0,
+            fechaNac: '',
+            info: '',
+            showA: 'hide',
+            data: []
+        };
+        this.find = this.find.bind(this);
+    }
+
+    async componentDidMount() {
+        this.find();
+    }
+
+    APIURL = localStorage.getItem('API_URL');
+
+    validate = () => {
+        if (!this.state.pNombre || 
+            !this.state.pApellido || 
+            !this.state.sexo || 
+            !this.state.fechaNac || 
+            !this.state.info
+            ) {
+            return false;
+        }
+        return true;
+    }
+
+    find = async () => {
+        var thisCopy = this;
+        await axios.get(this.APIURL + '/dashboard')
+        .then(function (res) {
+            if (res.data.error === false && res.data.data) {
+                thisCopy.setState({
+                    id: thisCopy.state.id,
+                    pNombre: thisCopy.state.pNombre,
+                    sNombre: thisCopy.state.sNombre,
+                    pApellido: thisCopy.state.pApellido,
+                    sApellido: thisCopy.state.sApellido,
+                    sexo: thisCopy.state.sexo,
+                    fechaNac: thisCopy.state.fechaNac,
+                    info: thisCopy.state.info,
+                    showA: thisCopy.state.showA,
+                    data: res.data
+                });
+                /*var newArr = [];
+                res.data.data.forEach(el => {
+                    var newElmnt = {
+                        primerNombre: el.primerNombre,
+                        segundoNombre: el.segundoNombre,
+                        primerApellido: el.primerApellido,
+                        segundoApellido: el.segundoApellido,
+                    }
+                    newArr.push(newElmnt);
+                });
+                thisCopy.datatable.rows = newArr;
+                console.log(newArr);*/
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+    }
+
+    findOne = async () => {
+        var thisCopy = this;
+        await axios.get(this.APIURL + '/dashboard/'+this.state.id)
+        .then(function (res) {
+            if (res.data.error === false && res.data.data) {
+                if (res.data.data.length >= 1) {
+                    var p = res.data.data[0];
+                    thisCopy.setState({
+                        id: thisCopy.state.id,
+                        pNombre: p.primerNombre,
+                        sNombre: p.segundoNombre,
+                        pApellido: p.primerApellido,
+                        sApellido: p.segundoApellido,
+                        sexo: p.sexo,
+                        fechaNac: formatDate(p.fechaNacimmiento),
+                        info: p.informacionAdicional,
+                        showA: thisCopy.state.showA,
+                        data: res.data
+                    });
+                } else {
+                    alert(`No se encontró ningun registro con ID ${thisCopy.state.id}!`)
+                }
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+    }
+
+    add = async () => {
+        if (this.validate()) {
+            var thisCopy = this;
+            await axios.post(this.APIURL + '/dashboard', this.state)
+            .then(function (res) {
+                if (res.data.error === false && res.data) {
+                    if (!res.data.data.error && res.data.data.affectedRows >= 1)
+                        alert("Registro agregado correctamente!")
+                    else
+                        alert("Error al agregar el registro!")
+                    thisCopy.find();
+                    thisCopy.clean();
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        }
+    }
+
+    edit = async () => {
+        if (this.validate()) {
+            var thisCopy = this;
+            await axios.patch(this.APIURL + '/dashboard/' + this.state.id || 0, this.state)
+            .then(function (res) {
+                if (res.data.error === false && res.data) {
+                    if (!res.data.data.error && res.data.data.affectedRows >= 1)
+                        alert("Registro editado correctamente!")
+                    else
+                        alert(`Error al editar el registro con ID ${thisCopy.state.id}!`)
+                    thisCopy.find();
+                    thisCopy.clean();
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        }
+    }
+
+    delete = async () => {
+        var thisCopy = this;
+        await axios.delete(this.APIURL + '/dashboard/'+this.state.id || 0)
+        .then(function (res) {
+            if (res.data.error === false && res.data) {
+                if (!res.data.data.error && res.data.data.affectedRows >= 1)
+                    alert("Registro eliminado correctamente!")
+                else
+                    alert(`Error al editar el registro con ID ${thisCopy.state.id}!`)
+                thisCopy.find();
+                thisCopy.clean();
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+    }
+
+    clean = () => {
+        var data = this.state.data;
+        this.setState({
+            id: 0,
+            pNombre: '',
+            sNombre: '',
+            pApellido: '',
+            sApellido: '',
+            sexo: 0,
+            fechaNac: '',
+            info: '',
+            showA: 'hide',
+            data: data
+        });
+    }
+
+    onInputChange = (e) => {
+        this.setState({
+            [e.target.name]: e.target.value
+        });
+        console.log(this.state)
+    }
+
     render() {
         return (
             <div>
@@ -18,7 +215,7 @@ export default class Dashboard extends Component {
                                                 <div className="form-group col-md-8">
                                                     <label htmlFor="id" className="col-md-12 col-form-label text-md-left"><b>id <span className="red"></span></b></label>
                                                     <div className="col-md-12">
-                                                        <input type="number" id="id" 
+                                                        <input min="0" value={this.state.id} type="number" id="id" 
                                                             className="form-control" 
                                                             onChange={this.onInputChange} 
                                                             name="id" 
@@ -26,7 +223,7 @@ export default class Dashboard extends Component {
                                                     </div>
                                                 </div>
                                                 <div className="col-md-4">
-                                                    <button type="button" onClick={() => this.findOne()} className="btn btn-info">
+                                                    <button type="button" style={{margin: 30+"px"}} onClick={() => this.findOne()} className="btn btn-info">
                                                         Buscar persona
                                                     </button>
                                                 </div>
@@ -35,8 +232,7 @@ export default class Dashboard extends Component {
                                                 <div className="form-group col-md-6 ">
                                                     <label htmlFor="pNombre" className="col-md-12 col-form-label text-md-left"><b>Primer nombre <span className="red">*</span></b></label>
                                                     <div className="col-md-12">
-                                                        <input type="text" 
-                                                            id="pNombre" 
+                                                        <input value={this.state.pNombre} type="text" id="pNombre" 
                                                             className="form-control" 
                                                             onChange={this.onInputChange} 
                                                             name="pNombre" required/>
@@ -45,7 +241,7 @@ export default class Dashboard extends Component {
                                                 <div className="form-group col-md-6 ">
                                                     <label htmlFor="sNombre" className="col-md-12 col-form-label text-md-left"><b>Segundo nombre</b></label>
                                                     <div className="col-md-12">
-                                                        <input type="text" 
+                                                        <input value={this.state.sNombre} type="text" 
                                                             id="sNombre" 
                                                             className="form-control" 
                                                             onChange={this.onInputChange} 
@@ -57,7 +253,7 @@ export default class Dashboard extends Component {
                                                 <div className="form-group col-md-6">
                                                     <label htmlFor="pApellido" className="col-md-12 col-form-label text-md-left"><b>Primer apellido <span className="red">*</span></b></label>
                                                     <div className="col-md-12">
-                                                        <input type="text" 
+                                                        <input value={this.state.pApellido} type="text" 
                                                             id="pApellido" 
                                                             className="form-control" 
                                                             onChange={this.onInputChange} 
@@ -67,7 +263,7 @@ export default class Dashboard extends Component {
                                                 <div className="form-group col-md-6">
                                                     <label htmlFor="sApellido" className="col-md-12 col-form-label text-md-left"><b>Segundo apellido</b></label>
                                                     <div className="col-md-12">
-                                                        <input type="text" 
+                                                        <input value={this.state.sApellido} type="text" 
                                                             id="sApellido" 
                                                             className="form-control" 
                                                             onChange={this.onInputChange} 
@@ -75,19 +271,91 @@ export default class Dashboard extends Component {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="form-group">
-                                                <label htmlFor="sexo">Example select</label>
-                                                <select class="form-control" id="sexo">
-                                                    <option value="1">Masculino</option>
-                                                    <option value="2">Femenino</option>
-                                                </select>
+                                            <div className="row">
+                                                <div className="form-group col-md-6">
+                                                    <label htmlFor="sexo" className="col-md-12 col-form-label text-md-left"><b>Sexo <span className="red">*</span></b></label>
+                                                    <div className="col-md-12">
+                                                        <select value={this.state.sexo} className="form-control" id="sexo" onChange={this.onInputChange} name="sexo" required>
+                                                            <option value="1">Masculino</option>
+                                                            <option value="2">Femenino</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div className="form-group col-md-6">
+                                                    <label htmlFor="fechaNac" className="col-md-12 col-form-label text-md-left"><b>Fecha nacimiento <span className="red">*</span></b></label>
+                                                    <div className="col-md-12">
+                                                        <input value={this.state.fechaNac} type="date" 
+                                                            id="fechaNac" 
+                                                            className="form-control" 
+                                                            onChange={this.onInputChange} 
+                                                            name="fechaNac" required/>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="col-md-6 offset-md-3">
-                                                <button type="button" onClick={() => this.login()} className="btn btn-primary">
-                                                    Iniciar sesión 
-                                                </button>
+                                            <div className="row">
+                                                <div className="form-group col-md-12">
+                                                    <label htmlFor="info" className="col-md-12 col-form-label text-md-left"><b>Información adicional <span className="red">*</span></b></label>
+                                                    <div className="col-md-12">
+                                                        <textarea value={this.state.info} 
+                                                            id="info" 
+                                                            className="form-control" 
+                                                            onChange={this.onInputChange} 
+                                                            name="info" required/>
+                                                    </div>
+                                                </div>
                                             </div>
+                                            <div className={"alert alert-warning "+this.state.showA} role="alert">
+                                                <b>Atención:</b> LLene los campos requeridos!
+                                            </div>
+                                            <br/>
+                                            <div className="row">
+                                                <div className="col-md-3">
+                                                    <button type="button" onClick={() => this.add()} className="btn btn-success">
+                                                        Agregar
+                                                    </button>
+                                                </div>
+                                                <div className="col-md-3">
+                                                    <button type="button" onClick={() => this.edit()} className="btn btn-warning">
+                                                        Editar 
+                                                    </button>
+                                                </div>
+                                                <div className="col-md-3">
+                                                    <button type="button" onClick={() => this.delete()} className="btn btn-danger">
+                                                        Eliminar 
+                                                    </button>
+                                                </div>
+                                                <div className="col-md-3">
+                                                    <button type="button" onClick={() => this.clean()} className="btn btn-default">
+                                                        Limpiar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <br/>
                                         </form>
+                                        <div className="row">
+                                            <table className="table">
+                                                <thead>
+                                                    <tr>
+                                                    <th scope="col">Nombres</th>
+                                                    <th scope="col">Apellidos</th>
+                                                    <th scope="col">Sexo</th>
+                                                    <th scope="col">Fecha nacimiento</th>
+                                                    <th scope="col">Info. adicional</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {
+                                                    <tr>
+                                                        <td>Mark</td>
+                                                        <td>Otto</td>
+                                                        <td>@mdo</td>
+                                                        <td>Otto</td>
+                                                        <td>@mdo</td>
+                                                    </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

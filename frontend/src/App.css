@@ -45,6 +45,11 @@ h3 {
     margin-left: 0;
     margin-right: 0;
 }
+
 .red {
     color: red;
+}
+
+.hide {
+    display: none;
 }
